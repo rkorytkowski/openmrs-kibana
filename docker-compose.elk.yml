@@ -1,0 +1,43 @@
+version: '2'
+
+services: 
+  elasticsearch:
+    image: elasticsearch
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "repo.path=/backup/es"
+    command: elasticsearch
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+  logstash:
+    image: logstash
+    command: -f /etc/logstash/conf.d/
+    volumes:
+      - ./logstash/config:/etc/logstash/conf.d
+      - ./logstash/jdbc:/etc/logstash/jdbc
+    environment:
+      - LS_HEAP_SIZE=2048m
+    links:
+      - elasticsearch
+      - db
+    depends_on:
+      - elasticsearch
+      - db
+
+  kibana:
+    image: kibana
+    command: kibana
+    volumes:
+      - ./kibana/config/:/etc/kibana/
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    links:
+      - elasticsearch
+
+volumes:
+  elasticsearch-data:
